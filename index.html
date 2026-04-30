@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnScan Pro — Scanner</title>
+  <link rel="stylesheet" href="css/shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    /* ── Layout ── */
+    .scanner-card { margin-bottom:1.5rem; }
+    .scanner-title {
+      font-size:1.65rem; font-weight:800;
+      letter-spacing:-.5px; margin-bottom:.5rem;
+      display:flex; align-items:center; gap:12px;
+    }
+    .scanner-title i { color:var(--blue); }
+    .scanner-desc {
+      color:var(--dim); font-family:var(--mono); font-size:.78rem;
+      border-left:3px solid var(--blue); padding-left:1rem;
+      margin-bottom:1.8rem;
+    }
+    .input-row {
+      display:flex; flex-wrap:wrap; gap:1rem;
+      align-items:flex-end; margin-bottom:1.2rem;
+    }
+    .input-row .field { flex:2; min-width:180px; }
+    .input-row .field.small { flex:1; min-width:130px; }
+    .btn-scan {
+      background:linear-gradient(105deg,#2563eb,#7c3aed);
+      border:none; padding:.85rem 2rem; border-radius:1.2rem;
+      font-weight:700; font-size:.92rem; color:white;
+      display:flex; align-items:center; gap:10px;
+      cursor:pointer; transition:all .25s;
+      box-shadow:0 6px 20px rgba(37,99,235,.35);
+      font-family:var(--display); white-space:nowrap;
+    }
+    .btn-scan:hover { transform:translateY(-2px); box-shadow:0 12px 28px rgba(37,99,235,.45); }
+    .btn-scan:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+
+    /* Feature cards */
+    .feature-grid { display:flex; flex-wrap:wrap; gap:1rem; }
+    .feature-card {
+      background:rgba(12,20,38,.7); border-radius:1.3rem;
+      padding:1.1rem 1.4rem; flex:1; min-width:140px;
+      text-align:center; border:1px solid var(--border);
+      transition:.25s; cursor:pointer;
+    }
+    .feature-card:hover { transform:translateY(-3px); border-color:var(--border-h); box-shadow:0 12px 28px rgba(56,189,248,.14); }
+    .feature-card i { font-size:1.7rem; color:var(--blue); margin-bottom:.5rem; display:block; }
+    .feature-card h3 { font-size:.78rem; font-weight:700; font-family:var(--mono); margin-bottom:.2rem; }
+    .feature-card p  { font-size:.68rem; color:var(--muted); }
+
+    /* Content panels */
+    .content {
+      margin-bottom:1.5rem; padding:1.8rem;
+      border-radius:1.5rem; background:var(--bg-card);
+      border:1px solid var(--border); display:none;
+      animation:fadeSlide .35s ease; backdrop-filter:blur(12px);
+    }
+    .content.active { display:block; }
+    .content h3 { font-size:1rem; font-weight:700; margin-bottom:.8rem; }
+    .content p  { font-size:.85rem; color:var(--dim); line-height:1.75; }
+    @keyframes fadeSlide {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* Progress */
+    .scan-progress { display:none; margin-bottom:1rem; }
+    .scan-progress.active { display:block; }
+    .prog-wrap { height:4px; background:var(--border); border-radius:4px; overflow:hidden; margin-bottom:.5rem; }
+    .prog-bar  {
+      height:100%; width:0%; border-radius:4px;
+      background:linear-gradient(90deg,#2563eb,#7c3aed,var(--blue));
+      background-size:200% 100%;
+      animation:shimmer 1.5s infinite; transition:width .1s linear;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .prog-label { font-size:.7rem; color:var(--muted); font-family:var(--mono); }
+
+    /* User bar */
+    .user-bar {
+      display:flex; align-items:center; gap:1rem;
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:1rem; padding:.7rem 1.2rem;
+      margin-bottom:1.5rem; flex-wrap:wrap;
+    }
+    .user-avatar {
+      width:36px; height:36px; border-radius:50%;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1rem; font-weight:700; flex-shrink:0;
+    }
+    .user-info { flex:1; }
+    .user-name  { font-size:.88rem; font-weight:700; }
+    .user-email { font-size:.7rem; color:var(--muted); font-family:var(--mono); }
+    .user-plan  {
+      font-size:.65rem; font-family:var(--mono); font-weight:700;
+      padding:.2rem .7rem; border-radius:20px;
+      background:rgba(56,189,248,.1); color:var(--blue); border:1px solid var(--border-h);
+    }
+    .scan-quota { font-size:.72rem; color:var(--muted); font-family:var(--mono); }
+
+    /* History */
+    .history-panel {
+      background:var(--bg-card); border:1px solid var(--border);
+      border-radius:1.5rem; padding:1.5rem;
+      margin-bottom:1.5rem; backdrop-filter:blur(12px);
+    }
+    .history-header {
+      display:flex; justify-content:space-between;
+      align-items:center; margin-bottom:1rem;
+    }
+    .history-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .btn-clear {
+      background:transparent; border:1px solid rgba(239,68,68,.3);
+      color:var(--red); font-size:.72rem; padding:.28rem .7rem;
+      border-radius:20px; cursor:pointer; transition:.2s; font-family:var(--mono);
+    }
+    .btn-clear:hover { background:rgba(239,68,68,.1); }
+    .history-list { display:flex; flex-direction:column; gap:.55rem; }
+    .history-item {
+      display:flex; justify-content:space-between; align-items:center;
+      background:var(--bg-input); border-radius:.8rem;
+      padding:.65rem 1rem; cursor:pointer;
+      border:1px solid transparent; transition:.2s; flex-wrap:wrap; gap:.4rem;
+    }
+    .history-item:hover { border-color:var(--border-h); }
+    .h-ip   { font-family:var(--mono); font-size:.82rem; font-weight:700; }
+    .h-date { font-size:.68rem; color:var(--muted); font-family:var(--mono); }
+    .h-badges { display:flex; gap:5px; }
+    .h-badge {
+      font-size:.62rem; padding:.12rem .45rem;
+      border-radius:20px; font-weight:700; font-family:var(--mono);
+    }
+    .h-badge.H { background:rgba(248,113,113,.15); color:var(--red); }
+    .h-badge.M { background:rgba(251,146,60,.15);  color:var(--orange); }
+    .h-badge.L { background:rgba(251,191,36,.15);  color:var(--yellow); }
+    .history-empty { text-align:center; padding:1.5rem; color:var(--muted); font-family:var(--mono); font-size:.78rem; }
+
+    /* Results */
+    .results-section {
+      background:var(--bg-card); border-radius:1.8rem;
+      padding:1.8rem; border:1px solid var(--border);
+      backdrop-filter:blur(12px);
+    }
+    .results-top {
+      display:grid; grid-template-columns:1fr auto;
+      gap:1.5rem; margin-bottom:1.5rem; align-items:center;
+    }
+    @media(max-width:680px) { .results-top { grid-template-columns:1fr; } }
+
+    .risk-summary { display:flex; flex-direction:column; gap:.8rem; }
+    .risk-badge {
+      background:var(--bg-input); border-radius:1rem;
+      padding:.75rem 1.2rem; display:flex;
+      align-items:center; gap:12px;
+      border-left:4px solid; min-width:200px;
+    }
+    .risk-high   { border-left-color:var(--red); }
+    .risk-medium { border-left-color:var(--orange); }
+    .risk-low    { border-left-color:var(--yellow); }
+    .risk-number { font-size:1.8rem; font-weight:800; font-family:var(--mono); margin-left:auto; }
+    .risk-label  { font-size:.78rem; font-weight:600; }
+
+    .chart-wrap { display:flex; flex-direction:column; align-items:center; }
+    .chart-canvas-wrap { width:155px; height:155px; position:relative; }
+    .chart-center {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      pointer-events:none;
+    }
+    .chart-center strong { font-size:1.5rem; font-weight:800; font-family:var(--mono); }
+    .chart-center span   { font-size:.58rem; color:var(--muted); font-family:var(--mono); text-transform:uppercase; letter-spacing:1px; }
+
+    .stats-metrics {
+      display:flex; flex-wrap:wrap; gap:1rem;
+      background:var(--bg-input); border-radius:1.2rem;
+      padding:1.2rem 1.5rem; margin-bottom:1.5rem;
+    }
+    .metric-item { display:flex; align-items:center; gap:10px; flex:1; min-width:130px; }
+    .metric-icon {
+      width:40px; height:40px; background:var(--bg-card);
+      border-radius:.8rem; display:flex; align-items:center;
+      justify-content:center; font-size:1.2rem; border:1px solid var(--border);
+    }
+    .metric-text strong { font-size:1.35rem; font-family:var(--mono); display:block; }
+    .metric-text span   { font-size:.7rem; color:var(--muted); }
+
+    .detail-header {
+      display:flex; justify-content:space-between;
+      align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;
+    }
+    .detail-header h3 { font-size:.95rem; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .detail-actions { display:flex; gap:.6rem; flex-wrap:wrap; }
+    .btn-action {
+      border:1px solid; padding:.55rem 1.1rem; border-radius:2rem;
+      font-weight:700; cursor:pointer; transition:.2s;
+      display:inline-flex; align-items:center; gap:7px;
+      font-family:var(--display); font-size:.78rem; background:transparent;
+    }
+    .btn-action.blue  { border-color:var(--blue);  color:var(--blue); }
+    .btn-action.blue:hover  { background:rgba(56,189,248,.09); }
+    .btn-action.green { border-color:var(--green); color:var(--green); }
+    .btn-action.green:hover { background:rgba(52,211,153,.09); }
+
+    .detail-list { border-radius:1.2rem; overflow:hidden; border:1px solid var(--border); }
+    .detail-item {
+      padding:1rem 1.3rem; border-bottom:1px solid var(--border);
+      display:flex; justify-content:space-between;
+      align-items:center; flex-wrap:wrap; gap:.5rem;
+      transition:background .15s;
+    }
+    .detail-item:last-child { border-bottom:none; }
+    .detail-item:hover { background:rgba(56,189,248,.04); }
+    .vuln-name { font-weight:600; font-family:var(--mono); font-size:.8rem; }
+    .vuln-desc { font-size:.7rem; color:var(--muted); margin-top:3px; }
+    .sev {
+      font-size:.62rem; font-weight:700; padding:.22rem .85rem;
+      border-radius:30px; font-family:var(--mono); white-space:nowrap;
+    }
+    .sev.critica { background:rgba(248,113,113,.14); color:var(--red);    border:1px solid rgba(248,113,113,.3); }
+    .sev.alta    { background:rgba(251,146,60,.14);  color:var(--orange); border:1px solid rgba(251,146,60,.3); }
+    .sev.baixa   { background:rgba(251,191,36,.14);  color:var(--yellow); border:1px solid rgba(251,191,36,.3); }
+
+    .empty-state {
+      text-align:center; padding:3rem 2rem;
+      color:var(--muted); display:flex; flex-direction:column;
+      align-items:center; gap:.8rem; font-family:var(--mono); font-size:.78rem;
+    }
+    .empty-state i { font-size:2.2rem; opacity:.3; }
+
+    /* Shodan badge */
+    .shodan-note {
+      font-size:.68rem; color:var(--muted); font-family:var(--mono);
+      margin-top:.5rem; display:flex; align-items:center; gap:6px;
+    }
+    .shodan-note i { color:var(--blue); }
+
+    /* Modal */
+    .modal-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.82); backdrop-filter:blur(8px);
+      z-index:1000; display:flex; align-items:center;
+      justify-content:center; padding:1.5rem; animation:fadeIn .2s ease;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+    .modal-box {
+      max-width:720px; width:100%; background:#080e1d;
+      border-radius:1.8rem; border:1px solid var(--border-h);
+      padding:2rem; max-height:85vh; overflow:auto;
+      box-shadow:0 40px 80px rgba(0,0,0,.6);
+    }
+    .modal-header {
+      display:flex; justify-content:space-between;
+      align-items:center; margin-bottom:1.5rem;
+    }
+    .modal-header h3 { color:var(--blue); font-size:1rem; display:flex; align-items:center; gap:8px; }
+    .btn-close {
+      background:rgba(255,255,255,.08); border:none; color:var(--text);
+      font-size:1.3rem; cursor:pointer; width:36px; height:36px;
+      border-radius:50%; display:flex; align-items:center; justify-content:center; transition:.2s;
+    }
+    .btn-close:hover { background:rgba(255,255,255,.15); }
+    .modal-pre {
+      white-space:pre-wrap; font-family:var(--mono); font-size:.73rem;
+      background:var(--bg); padding:1.2rem; border-radius:1rem;
+      line-height:1.7; color:var(--dim); border:1px solid var(--border);
+    }
+
+    footer {
+      text-align:center; margin-top:2.5rem;
+      font-size:.7rem; color:var(--muted);
+      font-family:var(--mono); padding-bottom:1rem;
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="index.html" class="logo-area" style="text-decoration:none;">
+      <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+      <div class="logo-text">
+        <h1>VulnScan Pro</h1>
+        <span>scanner inteligente de redes</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="active">Scanner</a>
+      <a href="pages/profile.html">Perfil</a>
+      <button class="btn-nav danger" id="btnLogout"><i class="fas fa-right-from-bracket"></i> Sair</button>
+    </div>
+  </nav>
+
+  <!-- USER BAR (preenchida via JS) -->
+  <div class="user-bar" id="userBar" style="display:none;">
+    <div class="user-avatar" id="userAvatar">?</div>
+    <div class="user-info">
+      <div class="user-name"  id="userName">—</div>
+      <div class="user-email" id="userEmail">—</div>
+    </div>
+    <span class="user-plan" id="userPlan">FREE</span>
+    <span class="scan-quota" id="scanQuota"></span>
+  </div>
+
+  <!-- SCANNER CARD -->
+  <div class="card scanner-card">
+    <div class="scanner-title">
+      <i class="fas fa-network-wired"></i>
+      Scanner de Vulnerabilidades de Rede
+    </div>
+    <div class="scanner-desc">
+      &gt; Introduz um IP público para análise real via Shodan API + detecção de risco por IA.
+    </div>
+
+    <div class="input-row">
+      <div class="field">
+        <label><i class="fas fa-map-marker-alt"></i> Endereço IP</label>
+        <input type="text" id="ipInput" placeholder="ex: 8.8.8.8" value="8.8.8.8">
+      </div>
+      <div class="field small">
+        <label><i class="fas fa-plug"></i> Portas (info)</label>
+        <input type="text" id="portRange" placeholder="1–1024" value="1-1024" readonly title="Range informativo — Shodan devolve todas as portas detectadas">
+      </div>
+      <button class="btn-scan" id="scanNowBtn">
+        <i class="fas fa-magnifying-glass"></i> Escanear
+      </button>
+    </div>
+
+    <div class="shodan-note">
+      <i class="fas fa-satellite-dish"></i>
+      Dados reais fornecidos pela <strong>Shodan API</strong> &mdash; apenas IPs públicos.
+      Use somente em IPs que tens autorização para analisar.
+    </div>
+
+    <!-- Progress -->
+    <div class="scan-progress" id="scanProgress" style="margin-top:1rem;">
+      <div class="prog-wrap"><div class="prog-bar" id="progBar"></div></div>
+      <div class="prog-label" id="progLabel">A iniciar...</div>
+    </div>
+
+    <!-- Feature cards -->
+    <div class="feature-grid" style="margin-top:1.5rem;">
+      <div class="feature-card" onclick="toggleContent('port')">
+        <i class="fas fa-plug"></i>
+        <h3>PORT SCAN</h3>
+        <p>Portas abertas detectadas</p>
+      </div>
+      <div class="feature-card" onclick="toggleContent('vuln')">
+        <i class="fas fa-bug"></i>
+        <h3>VULNERABILIDADES</h3>
+        <p>CVEs e falhas conhecidas</p>
+      </div>
+      <div class="feature-card" onclick="toggleContent('dicas')">
+        <i class="fas fa-lightbulb"></i>
+        <h3>DICAS</h3>
+        <p>Conselhos de hardening</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT TABS -->
+  <div id="port" class="content">
+    <h3>Varredura de Portas</h3>
+    <p>A varredura de portas identifica quais serviços estão ativos. Cada porta aberta é um possível vetor de ataque. Fechar portas desnecessárias e usar firewalls reduz significativamente a superfície de ataque.</p>
+  </div>
+  <div id="vuln" class="content">
+    <h3>Vulnerabilidades</h3>
+    <p>CVEs são identificadores de vulnerabilidades conhecidas em software. Manter sistemas actualizados e aplicar patches de segurança é a defesa mais eficaz contra exploits conhecidos.</p>
+  </div>
+  <div id="dicas" class="content">
+    <h3>Dicas de Segurança</h3>
+    <p>Use senhas fortes, activa 2FA, mantém sistemas actualizados, evita redes públicas sem VPN, configura firewalls, desactiva serviços não utilizados e realiza backups regulares.</p>
+  </div>
+
+  <!-- HISTÓRICO (Firestore) -->
+  <div class="history-panel">
+    <div class="history-header">
+      <h3><i class="fas fa-clock-rotate-left" style="color:var(--purple)"></i> Histórico de Scans</h3>
+      <button class="btn-clear" id="clearHistoryBtn"><i class="fas fa-trash-alt"></i> Limpar</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">Nenhum scan realizado ainda.</div>
+    </div>
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="results-section">
+    <div class="results-top">
+      <div class="risk-summary" id="riskSummary">
+        <div class="risk-badge risk-high">
+          <i class="fas fa-exclamation-triangle" style="color:var(--red)"></i>
+          <span class="risk-label">Alto Risco</span>
+          <span class="risk-number" id="highCount">—</span>
+        </div>
+        <div class="risk-badge risk-medium">
+          <i class="fas fa-chart-line" style="color:var(--orange)"></i>
+          <span class="risk-label">Risco Médio</span>
+          <span class="risk-number" id="mediumCount">—</span>
+        </div>
+        <div class="risk-badge risk-low">
+          <i class="fas fa-flag" style="color:var(--yellow)"></i>
+          <span class="risk-label">Baixo Risco</span>
+          <span class="risk-number" id="lowCount">—</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-canvas-wrap">
+          <canvas id="donutChart" width="155" height="155"></canvas>
+          <div class="chart-center">
+            <strong id="chartTotal">—</strong>
+            <span>issues</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-metrics">
+      <div class="metric-item">
+        <div class="metric-icon"><i class="fas fa-skull" style="color:var(--red)"></i></div>
+        <div class="metric-text"><strong id="criticalIssues">—</strong><span>CVEs Críticos</span></div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-icon"><i class="fas fa-door-open" style="color:var(--orange)"></i></div>
+        <div class="metric-text"><strong id="openPorts">—</strong><span>Portas Abertas</span></div>
+      </div>
+      <div class="metric-item">
+        <div class="metric-icon"><i class="fas fa-flag" style="color:var(--yellow)"></i></div>
+        <div class="metric-text"><strong id="lowImpact">—</strong><span>Baixo Impacto</span></div>
+      </div>
+    </div>
+
+    <div class="detail-header">
+      <h3><i class="fas fa-clipboard-list" style="color:var(--blue)"></i> Relatório Detalhado</h3>
+      <div class="detail-actions">
+        <button class="btn-action blue"  id="viewReportBtn"><i class="fas fa-file-alt"></i> Ver Relatório</button>
+        <button class="btn-action green" id="exportPdfBtn"><i class="fas fa-file-pdf"></i> PDF</button>
+      </div>
+    </div>
+
+    <div id="detailListContainer" class="detail-list">
+      <div class="empty-state">
+        <i class="fas fa-shield-halved"></i>
+        <span>Faz login e escaneia um IP para ver resultados reais.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <i class="fas fa-lock"></i> VulnScan Pro v3.0 — uso ético e autorizado apenas | Powered by Shodan + Firebase
+</footer>
+
+<!-- Firebase + lógica principal -->
+<script type="module">
+  import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, getDocs,
+           query, where, orderBy, limit,
+           deleteDoc, doc, getDoc,
+           serverTimestamp, updateDoc, increment }      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ── CONFIG (substitui pelos teus valores) ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBUgdqPuFPaQoNPqar3zY67zH5wn1BYnxM",
+    authDomain:        "vulnscan-pro-b4e40.firebaseapp.com",
+    projectId:         "vulnscan-pro-b4e40",
+    storageBucket:     "vulnscan-pro-b4e40.firebasestorage.app",
+    messagingSenderId: "726513715328",
+    appId:             "1:726513715328:web:e522ce412f5ff1ee2a3e65"
+  };
+
+  // ── Shodan API Key ──
+  const SHODAN_KEY = "Or9hXNNzvjGW88B3SlwMu85RdjincU4f";
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let currentUser  = null;
+  let lastScanData = null;
+  let donutChart   = null;
+  let userProfile  = null;
+
+  //--functions/index.js--
+> const {onRequest} = require("firebase-functions/v2/https");
+> const fetch = require("node-fetch");
+>
+> exports.shodanProxy = onRequest(async (req, res) => {
+>   res.set("Access-Control-Allow-Origin", "https://teu-dominio.web.app");
+>   const ip  = req.query.ip;
+>   const key = process.env.SHODAN_KEY; // variável de ambiente
+>   const r   = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${key}`);
+>   const data = await r.json();
+>   res.json(data);
+> });
+  
+  // ══════════════════════════════════════════
+  //  AUTH GUARD
+  // ══════════════════════════════════════════
+  onAuthStateChanged(auth, async user => {
+    if (!user) {
+      window.location.href = 'pages/auth.html';
+      return;
+    }
+    currentUser = user;
+    await loadUserProfile();
+    renderUserBar();
+    await loadHistory();
+  });
+
+  // ══════════════════════════════════════════
+  //  USER PROFILE
+  // ══════════════════════════════════════════
+  async function loadUserProfile() {
+    const ref  = doc(db, 'users', currentUser.uid);
+    const snap = await getDoc(ref);
+    userProfile = snap.exists() ? snap.data() : null;
+  }
+
+  function renderUserBar() {
+    const bar = document.getElementById('userBar');
+    bar.style.display = 'flex';
+    const name  = currentUser.displayName || userProfile?.name || 'Utilizador';
+    const email = currentUser.email;
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+
+    document.getElementById('userAvatar').textContent = initials;
+    document.getElementById('userName').textContent   = name;
+    document.getElementById('userEmail').textContent  = email;
+    document.getElementById('userPlan').textContent   = (userProfile?.plan || 'free').toUpperCase();
+
+    if (userProfile) {
+      const used  = userProfile.scansUsed  || 0;
+      const limit = userProfile.scansLimit || 50;
+      document.getElementById('scanQuota').textContent = `${used} / ${limit} scans este mês`;
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  LOGOUT
+  // ══════════════════════════════════════════
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await signOut(auth);
+    window.location.href = 'pages/auth.html';
+  });
+
+  // ══════════════════════════════════════════
+  //  DONUT CHART
+  // ══════════════════════════════════════════
+  function initChart() {
+    const ctx = document.getElementById('donutChart').getContext('2d');
+    donutChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Alto','Médio','Baixo'],
+        datasets: [{
+          data: [0,0,0],
+          backgroundColor: ['rgba(248,113,113,.8)','rgba(251,146,60,.8)','rgba(251,191,36,.8)'],
+          borderColor:      ['#f87171','#fb923c','#fbbf24'],
+          borderWidth: 2, hoverOffset: 6
+        }]
+      },
+      options: {
+        cutout: '72%',
+        plugins: { legend:{ display:false } },
+        animation: { animateRotate:true, duration:600 }
+      }
+    });
+  }
+
+  function updateChart(h, m, l) {
+    if (!donutChart) return;
+    donutChart.data.datasets[0].data = [h, m, l];
+    document.getElementById('chartTotal').textContent = h + m + l;
+    donutChart.update();
+  }
+
+  // ══════════════════════════════════════════
+  //  SHODAN API
+  // ══════════════════════════════════════════
+  async function fetchShodan(ip) {
+    // CORS note: Shodan não permite chamadas directas do browser na conta gratuita.
+    // Para produção usa um proxy simples (Cloud Function ou servidor).
+    // Em dev podes usar a extensão CORS Unblock ou um proxy local.
+    const url = `https://api.shodan.io/shodan/host/${ip}?key=${SHODAN_KEY}`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`Shodan: ${res.status} ${res.statusText}`);
+    return res.json();
+  }
+
+  function parseShodanData(ip, data) {
+    const ports    = data.ports || [];
+    const vulns    = Object.keys(data.vulns || {});
+    const services = data.data || [];
+
+    // Classificar CVEs por severidade (CVSS)
+    const critical = vulns.filter(v => {
+      const s = data.vulns[v]?.cvss;
+      return s && parseFloat(s) >= 7.0;
+    });
+    const medium = vulns.filter(v => {
+      const s = data.vulns[v]?.cvss;
+      return s && parseFloat(s) >= 4.0 && parseFloat(s) < 7.0;
+    });
+    const low = vulns.filter(v => {
+      const s = data.vulns[v]?.cvss;
+      return !s || parseFloat(s) < 4.0;
+    });
+
+    // Itens de baixo risco (portas "perigosas" abertas)
+    const dangerPorts = [21,23,25,110,143,3389,5900];
+    const riskyPorts  = ports.filter(p => dangerPorts.includes(p));
+
+    const details = [];
+
+    critical.forEach(cve => {
+      const info = data.vulns[cve];
+      details.push({
+        name:        `${cve} — CVSS ${info?.cvss || 'N/A'}`,
+        severity:    'crítica',
+        description: info?.summary || 'CVE crítico detectado neste host.'
+      });
+    });
+
+    medium.forEach(cve => {
+      const info = data.vulns[cve];
+      details.push({
+        name:        `${cve} — CVSS ${info?.cvss || 'N/A'}`,
+        severity:    'alta',
+        description: info?.summary || 'Vulnerabilidade de severidade média.'
+      });
+    });
+
+    riskyPorts.forEach(p => {
+      const labels = {21:'FTP',23:'Telnet',25:'SMTP',110:'POP3',143:'IMAP',3389:'RDP',5900:'VNC'};
+      details.push({
+        name:        `Porta ${p} (${labels[p] || ''}) aberta`,
+        severity:    'baixa',
+        description: `O serviço ${labels[p] || ''} na porta ${p} pode representar risco se não configurado adequadamente.`
+      });
+    });
+
+    low.forEach(cve => {
+      const info = data.vulns[cve];
+      details.push({
+        name:        `${cve}`,
+        severity:    'baixa',
+        description: info?.summary || 'Vulnerabilidade de baixo impacto.'
+      });
+    });
+
+    // Fallback sem CVEs mas com portas
+    if (details.length === 0 && ports.length > 0) {
+      ports.slice(0, 5).forEach(p => {
+        const svc = services.find(s => s.port === p);
+        details.push({
+          name:        `Porta ${p} aberta${svc?.product ? ' — ' + svc.product : ''}`,
+          severity:    'baixa',
+          description: `Serviço detectado na porta ${p}. Verifique se é necessário expô-lo publicamente.`
+        });
+      });
+    }
+
+    const orderMap = { 'crítica':1, 'alta':2, 'baixa':3 };
+    details.sort((a,b) => orderMap[a.severity] - orderMap[b.severity]);
+
+    return {
+      ip,
+      org:          data.org || 'N/A',
+      country:      data.country_name || 'N/A',
+      os:           data.os || 'N/A',
+      ports,
+      highRisk:     critical.length,
+      mediumRisk:   medium.length,
+      lowRisk:      low.length + riskyPorts.length,
+      criticalCVEs: critical.length,
+      openPorts:    ports.length,
+      lowImpact:    low.length + riskyPorts.length,
+      details,
+      date:         new Date().toLocaleString('pt-PT'),
+      source:       'shodan'
+    };
+  }
+
+  // Fallback simulado (quando Shodan não está disponível / IP privado)
+  function simulateScan(ip, portRange) {
+    let hash = 0;
+    for (let i = 0; i < ip.length; i++) {
+      hash = ((hash << 5) - hash) + ip.charCodeAt(i); hash |= 0;
+    }
+    const seed   = Math.abs(hash) % 100;
+    const crit   = (seed % 3) + 1;
+    const medium = (seed % 5) + 2;
+    const low    = (seed % 6) + 3;
+
+    const details = [];
+    for (let i = 0; i < crit; i++) {
+      details.push({ name:`CVE-2024-${1000+i+seed} — RCE simulado via ${ip}`, severity:'crítica', description:'Scan simulado. Configure a Shodan API para dados reais.' });
+    }
+    const medN = ['SSL/TLS obsoleto','Porta SMB 445 aberta','CSRF sem protecção','HTTP sem HSTS','Credenciais padrão'];
+    for (let i = 0; i < medium; i++) details.push({ name:medN[i%medN.length], severity:'alta', description:'Vulnerabilidade média detectada (simulado).' });
+    const lowN  = ['Banner grabbing exposto','Cookies sem HttpOnly','Telnet aberto (23)','Directory listing activo','Sem cabeçalhos CSP'];
+    for (let i = 0; i < low; i++)  details.push({ name:lowN[i%lowN.length], severity:'baixa', description:'Problema de baixo risco (simulado).' });
+    details.sort((a,b)=>({'crítica':1,'alta':2,'baixa':3}[a.severity]-{'crítica':1,'alta':2,'baixa':3}[b.severity]));
+    return { ip, highRisk:crit, mediumRisk:medium, lowRisk:low, criticalCVEs:crit, openPorts:medium+low, lowImpact:low, details, date:new Date().toLocaleString('pt-PT'), source:'simulated' };
+  }
+
+  // ══════════════════════════════════════════
+  //  PROGRESS BAR
+  // ══════════════════════════════════════════
+  const STEPS = ['A resolver host...','A consultar Shodan API...','A analisar portas abertas...','A processar CVEs...','A calcular score de risco...','A preparar relatório...'];
+
+  function animateProgress(onDone) {
+    const prog  = document.getElementById('scanProgress');
+    const bar   = document.getElementById('progBar');
+    const label = document.getElementById('progLabel');
+    prog.classList.add('active');
+    let pct = 0, step = 0;
+    const iv = setInterval(() => {
+      pct += 100 / (STEPS.length * 4);
+      if (pct > 100) pct = 100;
+      bar.style.width = pct + '%';
+      const si = Math.floor(pct / (100 / STEPS.length));
+      if (si < STEPS.length && si !== step) { step = si; label.textContent = STEPS[step]; }
+    }, 80);
+    setTimeout(() => {
+      clearInterval(iv);
+      bar.style.width = '100%';
+      label.textContent = 'Análise concluída ✓';
+      setTimeout(() => { prog.classList.remove('active'); bar.style.width='0%'; onDone(); }, 400);
+    }, 2000);
+  }
+
+  // ══════════════════════════════════════════
+  //  PERFORM SCAN
+  // ══════════════════════════════════════════
+  async function performScan() {
+    if (!currentUser) { showToast('Faz login primeiro.', true); return; }
+
+    const ip = document.getElementById('ipInput').value.trim();
+    if (!ip) { showToast('Insere um endereço IP.', true); return; }
+
+    // Quota check
+    if (userProfile && userProfile.scansUsed >= userProfile.scansLimit) {
+      showToast('Limite de scans atingido este mês.', true); return;
+    }
+
+    const btn = document.getElementById('scanNowBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> A analisar...';
+
+    animateProgress(async () => {
+      let results;
+      try {
+        const shodanData = await fetchShodan(ip);
+        results = parseShodanData(ip, shodanData);
+        showToast(`<i class="fas fa-satellite-dish"></i> Dados reais da Shodan para ${ip}`);
+      } catch (err) {
+        console.warn('Shodan indisponível, usando simulação:', err.message);
+        results = simulateScan(ip, document.getElementById('portRange').value);
+        showToast(`<i class="fas fa-flask"></i> Modo simulado (Shodan indisponível)`);
+      }
+
+      lastScanData = results;
+      renderResults(results);
+      await saveScanToFirestore(results);
+      await loadHistory();
+
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-magnifying-glass"></i> Escanear';
+      document.querySelector('.results-section').scrollIntoView({ behavior:'smooth' });
+    });
+  }
+
+  // ══════════════════════════════════════════
+  //  RENDER RESULTS
+  // ══════════════════════════════════════════
+  function renderResults(data) {
+    document.getElementById('highCount').textContent    = data.highRisk;
+    document.getElementById('mediumCount').textContent  = data.mediumRisk;
+    document.getElementById('lowCount').textContent     = data.lowRisk;
+    document.getElementById('criticalIssues').textContent = data.criticalCVEs;
+    document.getElementById('openPorts').textContent    = data.openPorts;
+    document.getElementById('lowImpact').textContent    = data.lowImpact;
+    updateChart(data.highRisk, data.mediumRisk, data.lowRisk);
+
+    const c = document.getElementById('detailListContainer');
+    if (!data.details?.length) {
+      c.innerHTML = `<div class="empty-state"><i class="fas fa-check-circle"></i><span>Nenhuma vulnerabilidade encontrada para ${esc(data.ip)}.</span></div>`;
+      return;
+    }
+    c.innerHTML = data.details.map(v => {
+      const cls = v.severity==='crítica'?'critica':v.severity==='alta'?'alta':'baixa';
+      const lbl = v.severity==='crítica'?'CRÍTICA':v.severity==='alta'?'ALTA':'BAIXA';
+      return `<div class="detail-item">
+        <div style="flex:3">
+          <div class="vuln-name"><i class="fas fa-bug" style="color:var(--muted);font-size:.7rem;margin-right:5px"></i>${esc(v.name)}</div>
+          <div class="vuln-desc">${esc(v.description)}</div>
+        </div>
+        <span class="sev ${cls}">${lbl}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // ══════════════════════════════════════════
+  //  FIRESTORE — Guardar Scan
+  // ══════════════════════════════════════════
+  async function saveScanToFirestore(data) {
+    if (!currentUser) return;
+    try {
+      await addDoc(collection(db, 'scans'), {
+        uid:        currentUser.uid,
+        ip:         data.ip,
+        highRisk:   data.highRisk,
+        mediumRisk: data.mediumRisk,
+        lowRisk:    data.lowRisk,
+        openPorts:  data.openPorts,
+        details:    data.details.slice(0, 30), // limite Firestore
+        source:     data.source,
+        createdAt:  serverTimestamp()
+      });
+      // Incrementar contador de scans do utilizador
+      const userRef = doc(db, 'users', currentUser.uid);
+      await updateDoc(userRef, { scansUsed: increment(1) });
+      userProfile.scansUsed = (userProfile.scansUsed || 0) + 1;
+      renderUserBar();
+    } catch (e) {
+      console.error('Erro ao guardar scan:', e);
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  FIRESTORE — Carregar Histórico
+  // ══════════════════════════════════════════
+  async function loadHistory() {
+    if (!currentUser) return;
+    const list = document.getElementById('historyList');
+    list.innerHTML = '<div class="history-empty"><i class="fas fa-spinner fa-spin"></i> A carregar...</div>';
+    try {
+      const q    = query(collection(db,'scans'), where('uid','==',currentUser.uid), orderBy('createdAt','desc'), limit(10));
+      const snap = await getDocs(q);
+      if (snap.empty) { list.innerHTML = '<div class="history-empty">Nenhum scan ainda.</div>'; return; }
+      list.innerHTML = '';
+      snap.forEach(d => {
+        const s   = d.data();
+        const ts  = s.createdAt?.toDate?.()?.toLocaleString('pt-PT') || '—';
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+          <div>
+            <div class="h-ip">${esc(s.ip)}</div>
+            <div class="h-date">${ts}</div>
+          </div>
+          <div class="h-badges">
+            <span class="h-badge H">H:${s.highRisk}</span>
+            <span class="h-badge M">M:${s.mediumRisk}</span>
+            <span class="h-badge L">L:${s.lowRisk}</span>
+          </div>`;
+        div.onclick = () => {
+          lastScanData = { ...s, criticalCVEs:s.highRisk, openPorts:s.openPorts||0, lowImpact:s.lowRisk };
+          renderResults(lastScanData);
+          showToast(`<i class="fas fa-clock-rotate-left"></i> Scan de ${s.ip} carregado`);
+        };
+        list.appendChild(div);
+      });
+    } catch (e) {
+      list.innerHTML = '<div class="history-empty">Erro ao carregar histórico.</div>';
+      console.error(e);
+    }
+  }
+
+  // ══════════════════════════════════════════
+  //  LIMPAR HISTÓRICO
+  // ══════════════════════════════════════════
+  document.getElementById('clearHistoryBtn').addEventListener('click', async () => {
+    if (!confirm('Apagar todo o histórico de scans permanentemente?')) return;
+    const q    = query(collection(db,'scans'), where('uid','==',currentUser.uid));
+    const snap = await getDocs(q);
+    const dels = snap.docs.map(d => deleteDoc(doc(db,'scans',d.id)));
+    await Promise.all(dels);
+    document.getElementById('historyList').innerHTML = '<div class="history-empty">Histórico limpo.</div>';
+    showToast('<i class="fas fa-trash-alt"></i> Histórico apagado');
+  });
+
+  // ══════════════════════════════════════════
+  //  VER RELATÓRIO (Modal)
+  // ══════════════════════════════════════════
+  document.getElementById('viewReportBtn').addEventListener('click', () => {
+    if (!lastScanData) { showToast('Faz um scan primeiro.', true); return; }
+    const d   = lastScanData;
+    let   txt = `===== RELATÓRIO VULNSCAN PRO =====\n`;
+    txt += `IP        : ${d.ip}\n`;
+    txt += `Org       : ${d.org||'N/A'}\n`;
+    txt += `País      : ${d.country||'N/A'}\n`;
+    txt += `Data      : ${d.date}\n`;
+    txt += `Fonte     : ${d.source==='shodan'?'Shodan API (dados reais)':'Simulação'}\n`;
+    txt += `──────────────────────────────────\n`;
+    txt += `🔴 Alto Risco  : ${d.highRisk}\n`;
+    txt += `🟠 Médio Risco : ${d.mediumRisk}\n`;
+    txt += `🟡 Baixo Risco : ${d.lowRisk}\n`;
+    txt += `🔌 Portas abertas : ${d.openPorts}\n`;
+    txt += `==================================\n🔎 FALHAS:\n\n`;
+    d.details?.forEach((v,i) => { txt += `${i+1}. [${v.severity.toUpperCase()}] ${v.name}\n   ↳ ${v.description}\n\n`; });
+    txt += `==================================\n💡 Actua imediatamente nos CVEs críticos e fecha portas desnecessárias.`;
+
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.innerHTML = `<div class="modal-box">
+      <div class="modal-header">
+        <h3><i class="fas fa-chart-simple"></i> Relatório — ${esc(d.ip)}</h3>
+        <button class="btn-close" id="closeModal">&times;</button>
+      </div>
+      <pre class="modal-pre">${esc(txt)}</pre>
+    </div>`;
+    document.body.appendChild(ov);
+    ov.querySelector('#closeModal').onclick = () => ov.remove();
+    ov.onclick = e => { if (e.target===ov) ov.remove(); };
+  });
+
+  // ══════════════════════════════════════════
+  //  EXPORTAR PDF
+  // ══════════════════════════════════════════
+  document.getElementById('exportPdfBtn').addEventListener('click', () => {
+    if (!lastScanData) { showToast('Faz um scan primeiro.', true); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const d   = lastScanData;
+
+    doc.setFillColor(6,11,24);
+    doc.rect(0,0,210,297,'F');
+
+    doc.setTextColor(56,189,248);
+    doc.setFontSize(18); doc.setFont('helvetica','bold');
+    doc.text('VulnScan Pro — Relatório de Segurança',14,20);
+
+    doc.setTextColor(148,163,184); doc.setFontSize(8); doc.setFont('helvetica','normal');
+    doc.text(`IP: ${d.ip}  |  ${d.date}  |  Fonte: ${d.source==='shodan'?'Shodan API':'Simulação'}`,14,28);
+
+    const boxes=[{l:'ALTO',v:d.highRisk,r:248,g:113,b:113},{l:'MÉDIO',v:d.mediumRisk,r:251,g:146,b:60},{l:'BAIXO',v:d.lowRisk,r:251,g:191,b:36}];
+    boxes.forEach((b,i)=>{
+      const x=14+i*63;
+      doc.setFillColor(b.r,b.g,b.b); doc.setGState(new doc.GState({opacity:.15}));
+      doc.roundedRect(x,34,58,20,3,3,'F');
+      doc.setGState(new doc.GState({opacity:1}));
+      doc.setTextColor(b.r,b.g,b.b);
+      doc.setFontSize(16); doc.setFont('helvetica','bold'); doc.text(String(b.v),x+7,47);
+      doc.setFontSize(6);  doc.setFont('helvetica','normal'); doc.text(b.l+' RISCO',x+7,52);
+    });
+
+    doc.setDrawColor(56,189,248,0.3); doc.line(14,60,196,60);
+    doc.setTextColor(226,234,248); doc.setFontSize(10); doc.setFont('helvetica','bold');
+    doc.text('Falhas Detectadas',14,68);
+
+    let y=76;
+    d.details?.forEach((v,i)=>{
+      if(y>270){doc.addPage();y=20;doc.setFillColor(6,11,24);doc.rect(0,0,210,297,'F');}
+      const clr=v.severity==='crítica'?[248,113,113]:v.severity==='alta'?[251,146,60]:[251,191,36];
+      doc.setFillColor(...clr);
+      doc.roundedRect(14,y-3.5,16,5.5,1,1,'F');
+      doc.setTextColor(255,255,255); doc.setFontSize(5.5); doc.setFont('helvetica','bold');
+      doc.text(v.severity.toUpperCase().slice(0,5),15.5,y);
+      doc.setTextColor(226,234,248); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+      const nl=doc.splitTextToSize(`${i+1}. ${v.name}`,162);
+      doc.text(nl,33,y);
+      doc.setTextColor(148,163,184); doc.setFontSize(6.5); doc.setFont('helvetica','normal');
+      doc.text(v.description,33,y+4*nl.length);
+      y+=5.5*nl.length+8;
+    });
+
+    doc.setTextColor(71,85,105); doc.setFontSize(6.5);
+    doc.text('VulnScan Pro v3.0 — uso ético e autorizado apenas',14,289);
+    doc.save(`vulnscan-${d.ip.replace(/\./g,'-')}.pdf`);
+    showToast('<i class="fas fa-file-pdf"></i> PDF exportado com sucesso');
+  });
+
+  // ══════════════════════════════════════════
+  //  UTILS
+  // ══════════════════════════════════════════
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function showToast(msg, isErr=false) {
+    document.querySelectorAll('.toast').forEach(t=>t.remove());
+    const t=document.createElement('div');
+    t.className='toast'+(isErr?' error':'');
+    t.innerHTML=msg;
+    document.body.appendChild(t);
+    setTimeout(()=>t.remove(),3500);
+  }
+
+  function toggleContent(id) {
+    document.querySelectorAll('.content').forEach(d=>{
+      d.classList.toggle('active', d.id===id && !d.classList.contains('active'));
+      if(d.id!==id) d.classList.remove('active');
+    });
+  }
+  window.toggleContent = toggleContent;
+
+  // Event listeners
+  document.getElementById('scanNowBtn').addEventListener('click', performScan);
+  document.getElementById('ipInput').addEventListener('keydown', e=>{ if(e.key==='Enter') performScan(); });
+
+  // Init chart on load
+  window.addEventListener('DOMContentLoaded', () => { initChart(); });
+</script>
+</body>
+</html>
