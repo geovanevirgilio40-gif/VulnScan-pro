@@ -293,7 +293,7 @@
     </a>
     <div class="nav-links">
       <a href="index.html" class="active">Scanner</a>
-      <a href="pages/profile.html">Perfil</a>
+      <a href="Pages/profile.html">Perfil</a>
       <button class="btn-nav danger" id="btnLogout"><i class="fas fa-right-from-bracket"></i> Sair</button>
     </div>
   </nav>
@@ -494,7 +494,7 @@
 > const fetch = require("node-fetch");
 >
 > exports.shodanProxy = onRequest(async (req, res) => {
->   res.set("Access-Control-Allow-Origin", "https://teu-dominio.web.app");
+>   res.set("Access-Control-Allow-Origin", "https://vulnscan-pro.pages.dev/");
 >   const ip  = req.query.ip;
 >   const key = process.env.SHODAN_KEY; // variável de ambiente
 >   const r   = await fetch(`https://api.shodan.io/shodan/host/${ip}?key=${key}`);
