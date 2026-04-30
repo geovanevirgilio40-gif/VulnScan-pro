@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnScan Pro — Perfil</title>
+  <link rel="stylesheet" href="../css/shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .page-grid {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media(max-width:780px) { .page-grid { grid-template-columns:1fr; } }
+
+    .profile-card { text-align:center; padding:2.2rem; }
+    .avatar-big {
+      width:90px; height:90px; border-radius:50%;
+      background:linear-gradient(135deg,#2563eb,#7c3aed);
+      display:flex; align-items:center; justify-content:center;
+      font-size:2rem; font-weight:800; margin:0 auto 1.2rem;
+      box-shadow:0 0 30px rgba(37,99,235,.4);
+    }
+    .profile-name  { font-size:1.3rem; font-weight:800; margin-bottom:.3rem; }
+    .profile-email { font-size:.78rem; color:var(--muted); font-family:var(--mono); }
+    .plan-badge {
+      display:inline-block; margin-top:.8rem;
+      background:rgba(56,189,248,.1); border:1px solid var(--border-h);
+      color:var(--blue); font-family:var(--mono); font-size:.72rem;
+      font-weight:700; padding:.3rem 1rem; border-radius:20px;
+    }
+
+    .quota-bar-wrap {
+      margin-top:1.5rem; background:var(--bg-input);
+      border-radius:1rem; padding:1rem 1.2rem;
+      border:1px solid var(--border);
+    }
+    .quota-label {
+      display:flex; justify-content:space-between;
+      font-size:.75rem; font-family:var(--mono);
+      margin-bottom:.6rem; color:var(--dim);
+    }
+    .quota-track { height:6px; background:var(--border); border-radius:6px; overflow:hidden; }
+    .quota-fill  {
+      height:100%; border-radius:6px;
+      background:linear-gradient(90deg,#2563eb,#7c3aed);
+      transition:width .5s ease;
+    }
+
+    .section-title {
+      font-size:1rem; font-weight:700;
+      margin-bottom:1rem; display:flex; align-items:center; gap:8px;
+      border-bottom:1px solid var(--border); padding-bottom:.8rem;
+    }
+    .section-title i { color:var(--blue); }
+
+    .stat-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+      gap:1rem; margin-bottom:1.5rem;
+    }
+    .stat-box {
+      background:var(--bg-input); border-radius:1rem;
+      padding:1.1rem; text-align:center; border:1px solid var(--border);
+    }
+    .stat-box strong { font-size:1.8rem; font-family:var(--mono); display:block; }
+    .stat-box span   { font-size:.7rem; color:var(--muted); }
+
+    .recent-scan-item {
+      display:flex; justify-content:space-between; align-items:center;
+      padding:.85rem 1.1rem; border-bottom:1px solid var(--border);
+      flex-wrap:wrap; gap:.5rem;
+    }
+    .recent-scan-item:last-child { border-bottom:none; }
+    .rs-ip   { font-family:var(--mono); font-size:.85rem; font-weight:700; }
+    .rs-date { font-size:.7rem; color:var(--muted); font-family:var(--mono); }
+    .rs-score {
+      font-family:var(--mono); font-size:.75rem; font-weight:700;
+      padding:.25rem .7rem; border-radius:20px;
+    }
+    .rs-score.danger { background:rgba(248,113,113,.14); color:var(--red); }
+    .rs-score.warn   { background:rgba(251,146,60,.14);  color:var(--orange); }
+    .rs-score.safe   { background:rgba(52,211,153,.14);  color:var(--green); }
+
+    .empty-scans {
+      text-align:center; padding:2rem; color:var(--muted);
+      font-family:var(--mono); font-size:.8rem;
+    }
+
+    .danger-zone {
+      background:rgba(239,68,68,.06);
+      border:1px solid rgba(239,68,68,.2);
+      border-radius:1rem; padding:1.2rem 1.4rem;
+      margin-top:1.5rem;
+    }
+    .danger-zone h4 { color:var(--red); font-size:.88rem; margin-bottom:.5rem; display:flex; align-items:center; gap:8px; }
+    .danger-zone p  { font-size:.78rem; color:var(--muted); margin-bottom:1rem; line-height:1.6; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="../index.html" class="logo-area" style="text-decoration:none;">
+      <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+      <div class="logo-text">
+        <h1>VulnScan Pro</h1>
+        <span>scanner inteligente de redes</span>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="../index.html">Scanner</a>
+      <a href="profile.html" class="active">Perfil</a>
+      <button class="btn-nav danger" id="btnLogout"><i class="fas fa-right-from-bracket"></i> Sair</button>
+    </div>
+  </nav>
+
+  <div class="page-grid">
+
+    <!-- LEFT: Profile card -->
+    <div>
+      <div class="card profile-card">
+        <div class="avatar-big" id="avatarBig">?</div>
+        <div class="profile-name"  id="profileName">—</div>
+        <div class="profile-email" id="profileEmail">—</div>
+        <span class="plan-badge"   id="profilePlan">FREE</span>
+
+        <div class="quota-bar-wrap">
+          <div class="quota-label">
+            <span>Scans este mês</span>
+            <span id="quotaText">0 / 50</span>
+          </div>
+          <div class="quota-track">
+            <div class="quota-fill" id="quotaFill" style="width:0%"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:1.2rem; display:flex; flex-direction:column; gap:.7rem;">
+          <button class="btn btn-ghost" onclick="window.location.href='../index.html'">
+            <i class="fas fa-magnifying-glass"></i> Novo Scan
+          </button>
+          <button class="btn-nav danger" id="btnLogout2" style="border-radius:1.2rem; padding:.7rem; font-size:.88rem; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <i class="fas fa-right-from-bracket"></i> Terminar Sessão
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Stats + history -->
+    <div>
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="section-title">
+          <i class="fas fa-chart-bar"></i> Estatísticas Globais
+        </div>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <strong id="statTotal">—</strong>
+            <span>Scans Totais</span>
+          </div>
+          <div class="stat-box">
+            <strong id="statCritical" style="color:var(--red)">—</strong>
+            <span>CVEs Críticos</span>
+          </div>
+          <div class="stat-box">
+            <strong id="statIPs">—</strong>
+            <span>IPs Únicos</span>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <i class="fas fa-history"></i> Scans Recentes
+        </div>
+        <div class="detail-list" id="recentList">
+          <div class="empty-scans"><i class="fas fa-spinner fa-spin"></i> A carregar...</div>
+        </div>
+      </div>
+
+      <!-- Danger zone -->
+      <div class="card">
+        <div class="danger-zone">
+          <h4><i class="fas fa-triangle-exclamation"></i> Zona de Perigo</h4>
+          <p>Apagar a conta remove permanentemente todos os teus dados, histórico de scans e perfil. Esta ação não pode ser desfeita.</p>
+          <button class="btn-nav danger" onclick="deleteAccount()">
+            <i class="fas fa-skull"></i> Apagar Conta Permanentemente
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp }                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut,
+           deleteUser }                                 from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, getDoc, getDocs,
+           collection, query, where, orderBy,
+           limit, deleteDoc }                           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBUgdqPuFPaQoNPqar3zY67zH5wn1BYnxM",
+    authDomain:        "vulnscan-pro-b4e40.firebaseapp.com",
+    projectId:         "vulnscan-pro-b4e40",
+    storageBucket:     "vulnscan-pro-b4e40.firebasestorage.app",
+    messagingSenderId: "726513715328",
+    appId:             "1:726513715328:web:e522ce412f5ff1ee2a3e65"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async user => {
+    if (!user) { window.location.href = 'auth.html'; return; }
+    currentUser = user;
+    await loadProfile();
+    await loadScans();
+  });
+
+  async function loadProfile() {
+    const ref  = doc(db, 'users', currentUser.uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : {};
+
+    const name     = currentUser.displayName || data.name || 'Utilizador';
+    const initials = name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+
+    document.getElementById('avatarBig').textContent    = initials;
+    document.getElementById('profileName').textContent  = name;
+    document.getElementById('profileEmail').textContent = currentUser.email;
+    document.getElementById('profilePlan').textContent  = (data.plan||'free').toUpperCase();
+
+    const used  = data.scansUsed  || 0;
+    const lim   = data.scansLimit || 50;
+    const pct   = Math.min(100, (used/lim)*100);
+    document.getElementById('quotaText').textContent    = `${used} / ${lim}`;
+    document.getElementById('quotaFill').style.width    = pct + '%';
+    if (pct > 80) document.getElementById('quotaFill').style.background = 'linear-gradient(90deg,#f87171,#fb923c)';
+  }
+
+  async function loadScans() {
+    const q    = query(collection(db,'scans'), where('uid','==',currentUser.uid), orderBy('createdAt','desc'), limit(20));
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      document.getElementById('recentList').innerHTML = '<div class="empty-scans">Nenhum scan ainda. <a href="../index.html" style="color:var(--blue)">Fazer o primeiro scan →</a></div>';
+      document.getElementById('statTotal').textContent    = '0';
+      document.getElementById('statCritical').textContent = '0';
+      document.getElementById('statIPs').textContent      = '0';
+      return;
+    }
+
+    let totalCrit = 0;
+    const ips = new Set();
+    let html  = '';
+
+    snap.forEach(d => {
+      const s   = d.data();
+      const ts  = s.createdAt?.toDate?.()?.toLocaleString('pt-PT') || '—';
+      totalCrit += s.highRisk || 0;
+      ips.add(s.ip);
+      const score = s.highRisk > 0 ? 'danger' : s.mediumRisk > 0 ? 'warn' : 'safe';
+      const lbl   = s.highRisk > 0 ? `${s.highRisk} CRÍTICOS` : s.mediumRisk > 0 ? `${s.mediumRisk} MÉDIOS` : 'SEGURO';
+      html += `<div class="recent-scan-item">
+        <div>
+          <div class="rs-ip">${s.ip}</div>
+          <div class="rs-date">${ts}</div>
+        </div>
+        <span class="rs-score ${score}">${lbl}</span>
+      </div>`;
+    });
+
+    document.getElementById('recentList').innerHTML = html;
+    document.getElementById('statTotal').textContent    = snap.size;
+    document.getElementById('statCritical').textContent = totalCrit;
+    document.getElementById('statIPs').textContent      = ips.size;
+  }
+
+  // Logout
+  async function doLogout() { await signOut(auth); window.location.href='auth.html'; }
+  document.getElementById('btnLogout').addEventListener('click', doLogout);
+  document.getElementById('btnLogout2').addEventListener('click', doLogout);
+
+  // Delete account
+  window.deleteAccount = async function() {
+    if (!confirm('Tens a certeza? Esta acção apaga TODOS os teus dados permanentemente.')) return;
+    if (!confirm('Confirmação final — os dados não podem ser recuperados.')) return;
+    try {
+      const q    = query(collection(db,'scans'), where('uid','==',currentUser.uid));
+      const snap = await getDocs(q);
+      await Promise.all(snap.docs.map(d => deleteDoc(doc(db,'scans',d.id))));
+      await deleteDoc(doc(db,'users',currentUser.uid));
+      await deleteUser(currentUser);
+      window.location.href = 'auth.html';
+    } catch (e) {
+      alert('Erro ao apagar conta. Pode ser necessário fazer login novamente antes de apagar.');
+    }
+  };
+</script>
+</body>
+</html>
