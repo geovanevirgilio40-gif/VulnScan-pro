@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VulnScan Pro — Entrar</title>
+  <link rel="stylesheet" href="../css/shared.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:1.5rem; }
+
+    .auth-wrap {
+      width:100%; max-width:440px;
+      position:relative; z-index:1;
+    }
+
+    /* glow orb background */
+    .orb {
+      position:fixed;
+      border-radius:50%;
+      filter:blur(80px);
+      pointer-events:none;
+      z-index:0;
+    }
+    .orb-1 { width:400px;height:400px; background:rgba(37,99,235,.18); top:-100px; left:-100px; }
+    .orb-2 { width:350px;height:350px; background:rgba(124,58,237,.14); bottom:-80px; right:-80px; }
+
+    .logo-center {
+      display:flex; flex-direction:column;
+      align-items:center; gap:12px;
+      margin-bottom:2rem; text-align:center;
+    }
+    .logo-center .logo-icon { width:56px;height:56px; font-size:1.8rem; margin:0 auto; }
+    .logo-center h1 {
+      font-size:1.8rem; font-weight:800;
+      background:linear-gradient(to right,#e0f2fe,#a78bfa);
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .logo-center p { color:var(--muted); font-size:.82rem; font-family:var(--mono); }
+
+    /* Tab switcher */
+    .tabs {
+      display:flex; background:var(--bg-input);
+      border-radius:1rem; padding:.3rem;
+      margin-bottom:1.8rem; border:1px solid var(--border);
+    }
+    .tab-btn {
+      flex:1; padding:.6rem; border:none;
+      background:transparent; color:var(--muted);
+      font-family:var(--display); font-weight:700;
+      font-size:.88rem; border-radius:.75rem;
+      cursor:pointer; transition:.2s;
+    }
+    .tab-btn.active {
+      background:linear-gradient(105deg,#2563eb,#7c3aed);
+      color:white;
+    }
+
+    .auth-form { display:flex; flex-direction:column; gap:1rem; }
+    .auth-form.hidden { display:none; }
+
+    /* Google btn */
+    .btn-google {
+      display:flex; align-items:center; justify-content:center; gap:10px;
+      width:100%; padding:.85rem; border-radius:1.2rem;
+      border:1px solid var(--border-h); background:transparent;
+      color:var(--text); font-family:var(--display);
+      font-weight:700; font-size:.9rem; cursor:pointer; transition:.2s;
+    }
+    .btn-google:hover { background:rgba(255,255,255,.05); }
+    .btn-google img { width:20px; height:20px; }
+
+    .forgot {
+      text-align:right; font-size:.78rem;
+      color:var(--muted); font-family:var(--mono);
+      cursor:pointer; transition:.2s;
+    }
+    .forgot:hover { color:var(--blue); }
+
+    .terms {
+      text-align:center; font-size:.72rem;
+      color:var(--muted); font-family:var(--mono);
+      margin-top:.5rem; line-height:1.6;
+    }
+    .terms a { color:var(--blue); text-decoration:none; }
+    .terms a:hover { text-decoration:underline; }
+  </style>
+</head>
+<body>
+
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <div class="auth-wrap">
+
+    <!-- Logo -->
+    <div class="logo-center">
+      <div class="logo-icon"><i class="fas fa-shield-halved"></i></div>
+      <h1>VulnScan Pro</h1>
+      <p>// scanner inteligente de redes</p>
+    </div>
+
+    <div class="card">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Entrar</button>
+        <button class="tab-btn"        id="tabReg"   onclick="switchTab('register')">Criar Conta</button>
+      </div>
+
+      <!-- Error -->
+      <div class="error-msg" id="errorMsg"></div>
+
+      <!-- LOGIN FORM -->
+      <div class="auth-form" id="loginForm">
+        <div class="field">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="loginEmail" placeholder="email@exemplo.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <div class="forgot" onclick="sendPasswordReset()">Esqueceu a password?</div>
+        <button class="btn btn-primary" id="btnLogin" onclick="doLogin()">
+          <i class="fas fa-right-to-bracket"></i> Entrar
+        </button>
+        <div class="divider">ou</div>
+        <button class="btn-google" onclick="doGoogleLogin()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Continuar com Google
+        </button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div class="auth-form hidden" id="registerForm">
+        <div class="field">
+          <label><i class="fas fa-user"></i> Nome</label>
+          <input type="text" id="regName" placeholder="O teu nome" autocomplete="name">
+        </div>
+        <div class="field">
+          <label><i class="fas fa-envelope"></i> Email</label>
+          <input type="email" id="regEmail" placeholder="email@exemplo.com" autocomplete="email">
+        </div>
+        <div class="field">
+          <label><i class="fas fa-lock"></i> Password</label>
+          <input type="password" id="regPass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <label><i class="fas fa-lock"></i> Confirmar Password</label>
+          <input type="password" id="regPassConfirm" placeholder="Repete a password" autocomplete="new-password">
+        </div>
+        <button class="btn btn-primary" id="btnRegister" onclick="doRegister()">
+          <i class="fas fa-user-plus"></i> Criar Conta
+        </button>
+        <div class="divider">ou</div>
+        <button class="btn-google" onclick="doGoogleLogin()">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Continuar com Google
+        </button>
+        <p class="terms">
+          Ao criar conta, aceitas os nossos
+          <a href="#">Termos de Uso</a> e
+          <a href="#">Política de Privacidade</a>.<br>
+          Esta ferramenta destina-se exclusivamente a uso ético e autorizado.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword,
+             createUserWithEmailAndPassword,
+             GoogleAuthProvider, signInWithPopup,
+             sendPasswordResetEmail, updateProfile,
+             onAuthStateChanged }                     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc,
+             serverTimestamp }                        from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ── Config (substitui pelos teus valores) ──
+    const firebaseConfig = {
+      apiKey:            "AIzaSyBUgdqPuFPaQoNPqar3zY67zH5wn1BYnxM",
+      authDomain:        "vulnscan-pro-b4e40.firebaseapp.com",
+      projectId:         "vulnscan-pro-b4e40",
+      storageBucket:     "vulnscan-pro-b4e40.firebasestorage.app",
+      messagingSenderId: "726513715328",
+      appId:             "1:726513715328:web:e522ce412f5ff1ee2a3e65"
+    };
+
+    const app      = initializeApp(firebaseConfig);
+    const auth     = getAuth(app);
+    const db       = getFirestore(app);
+    const provider = new GoogleAuthProvider();
+
+    // ── Redirecionar se já logado ──
+    onAuthStateChanged(auth, user => {
+      if (user) window.location.href = '../index.html';
+    });
+
+    // ── Criar perfil no Firestore ──
+    async function createUserProfile(user, extra = {}) {
+      const ref = doc(db, 'users', user.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await setDoc(ref, {
+          uid:       user.uid,
+          email:     user.email,
+          name:      user.displayName || extra.name || 'Utilizador',
+          plan:      'free',
+          scansUsed: 0,
+          scansLimit:50,
+          createdAt: serverTimestamp()
+        });
+      }
+    }
+
+    // ── Helpers UI ──
+    function setLoading(btnId, loading) {
+      const btn = document.getElementById(btnId);
+      btn.disabled = loading;
+      btn.innerHTML = loading
+        ? '<span class="spinner"></span> A processar...'
+        : (btnId === 'btnLogin'
+            ? '<i class="fas fa-right-to-bracket"></i> Entrar'
+            : '<i class="fas fa-user-plus"></i> Criar Conta');
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 5000);
+    }
+
+    function translateError(code) {
+      const map = {
+        'auth/user-not-found':      'Utilizador não encontrado.',
+        'auth/wrong-password':      'Password incorreta.',
+        'auth/email-already-in-use':'Este email já está registado.',
+        'auth/weak-password':       'Password demasiado fraca (mín. 6 caracteres).',
+        'auth/invalid-email':       'Email inválido.',
+        'auth/too-many-requests':   'Demasiadas tentativas. Tenta mais tarde.',
+        'auth/popup-closed-by-user':'Login cancelado.',
+      };
+      return map[code] || 'Ocorreu um erro. Tenta novamente.';
+    }
+
+    // ── Tab switcher (exposta globalmente) ──
+    window.switchTab = function(tab) {
+      document.getElementById('loginForm').classList.toggle('hidden',    tab !== 'login');
+      document.getElementById('registerForm').classList.toggle('hidden', tab !== 'register');
+      document.getElementById('tabLogin').classList.toggle('active',    tab === 'login');
+      document.getElementById('tabReg').classList.toggle('active',      tab === 'register');
+      document.getElementById('errorMsg').classList.remove('show');
+    };
+
+    // ── Login com Email ──
+    window.doLogin = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPass').value;
+      if (!email || !pass) { showError('Preenche todos os campos.'); return; }
+      setLoading('btnLogin', true);
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+        window.location.href = '../index.html';
+      } catch (e) {
+        showError(translateError(e.code));
+        setLoading('btnLogin', false);
+      }
+    };
+
+    // ── Registo ──
+    window.doRegister = async function() {
+      const name  = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass  = document.getElementById('regPass').value;
+      const conf  = document.getElementById('regPassConfirm').value;
+      if (!name || !email || !pass) { showError('Preenche todos os campos.'); return; }
+      if (pass !== conf)            { showError('As passwords não coincidem.'); return; }
+      if (pass.length < 6)          { showError('Password demasiado curta (mín. 6).'); return; }
+      setLoading('btnRegister', true);
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, email, pass);
+        await updateProfile(cred.user, { displayName: name });
+        await createUserProfile(cred.user, { name });
+        window.location.href = '../index.html';
+      } catch (e) {
+        showError(translateError(e.code));
+        setLoading('btnRegister', false);
+      }
+    };
+
+    // ── Login com Google ──
+    window.doGoogleLogin = async function() {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        await createUserProfile(result.user);
+        window.location.href = '../index.html';
+      } catch (e) {
+        showError(translateError(e.code));
+      }
+    };
+
+    // ── Reset de Password ──
+    window.sendPasswordReset = async function() {
+      const email = document.getElementById('loginEmail').value.trim();
+      if (!email) { showError('Insere o teu email para recuperar a password.'); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showError('✅ Email de recuperação enviado! Verifica a tua caixa.');
+      } catch (e) {
+        showError(translateError(e.code));
+      }
+    };
+
+    // Enter key para submeter
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const loginHidden = document.getElementById('loginForm').classList.contains('hidden');
+      if (!loginHidden) window.doLogin();
+      else              window.doRegister();
+    });
+  </script>
+</body>
+</html>
